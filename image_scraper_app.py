@@ -33,13 +33,15 @@ if st.button("Extract Images from All URLs"):
         for url in urls:
     url = url.strip()
     if not url.lower().startswith(("http://", "https://")):
-        url = "https://" + url  # Automatically add https if missing
+        url = "https://" + url
     try:
         response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
         if response.status_code != 200:
             st.warning(f"Skipping URL {url} — server returned status code {response.status_code}")
             continue
-        # rest of your parsing code...
+        # your existing parsing code here, all indented inside the try
+    except Exception as e:
+        st.error(f"Error processing {url}: {e}")
 
                 # Extract product name from <h1>, <title>, or og:title meta tag
                 product_name = (
