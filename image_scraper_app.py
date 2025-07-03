@@ -80,7 +80,7 @@ if download_images:
     st.download_button(
         label="📦 Download All Images as ZIP",
         data=zip_buffer,
-        file_name="images.zip",
+        file_name=f"{product_name}_images.zip"
         mime="application/zip"
     )
 
