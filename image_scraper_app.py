@@ -31,10 +31,15 @@ if st.button("Extract Images from All URLs"):
         urls = [u.strip() for u in urls_input.split(",") if u.strip()]
 
         for url in urls:
-            st.write(f"🔎 Processing: {url}")
-            try:
-                response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-                soup = BeautifulSoup(response.text, 'html.parser')
+    url = url.strip()
+    if not url.lower().startswith(("http://", "https://")):
+        url = "https://" + url  # Automatically add https if missing
+    try:
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        if response.status_code != 200:
+            st.warning(f"Skipping URL {url} — server returned status code {response.status_code}")
+            continue
+        # rest of your parsing code...
 
                 # Extract product name from <h1>, <title>, or og:title meta tag
                 product_name = (
