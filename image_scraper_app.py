@@ -72,5 +72,6 @@ if st.button("Extract Images"):
 
 # Download zip
 if download_images:
-    zip_buffer = Byt_
+    zip_buffer = BytesIO()
+
 
