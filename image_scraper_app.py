@@ -73,5 +73,16 @@ if st.button("Extract Images"):
 # Download zip
 if download_images:
     zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+        for name, img in download_images:
+            zip_file.writestr(name, img.read())
+    zip_buffer.seek(0)
+    st.download_button(
+        label="📦 Download All Images as ZIP",
+        data=zip_buffer,
+        file_name="images.zip",
+        mime="application/zip"
+    )
+
 
 
