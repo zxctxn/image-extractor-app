@@ -9,15 +9,12 @@ import re
 
 st.title("🖼️ Multi-URL High-Quality Image Extractor")
 
-# Initialize session state to store extraction results
 if "all_results" not in st.session_state:
     st.session_state.all_results = []
 
 def clean_filename(name):
-    # Clean filename to avoid illegal characters
     return re.sub(r'[\\/*?:"<>|]', "_", name)[:100]
 
-# Input for multiple URLs, comma separated
 urls_input = st.text_area("Paste webpage URLs (comma separated):")
 
 min_width = st.slider("Minimum image width", 50, 2000, 300)
@@ -27,11 +24,10 @@ if st.button("Extract Images from All URLs"):
     if not urls_input.strip():
         st.warning("Please enter at least one URL.")
     else:
-        st.session_state.all_results = []  # Clear previous results
+        st.session_state.all_results = []
         urls = [u.strip() for u in urls_input.split(",") if u.strip()]
 
         for url in urls:
-            # Validate and fix URL
             if not url.lower().startswith(("http://", "https://")):
                 url = "https://" + url
 
@@ -39,14 +35,12 @@ if st.button("Extract Images from All URLs"):
 
             try:
                 response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-
                 if response.status_code != 200:
                     st.warning(f"Skipping URL {url} — server returned status code {response.status_code}")
                     continue
 
                 soup = BeautifulSoup(response.text, 'html.parser')
 
-                # Extract product name from <h1>, <title>, or og:title meta tag
                 product_name = (
                     soup.find("h1").text.strip() if soup.find("h1") else
                     soup.title.string.strip() if soup.title else
@@ -61,7 +55,6 @@ if st.button("Extract Images from All URLs"):
                 found = 0
 
                 for i, img in enumerate(img_tags):
-                    # Try src, data-src, srcset, data-srcset for lazy loading
                     img_url = (
                         img.get("src") or img.get("data-src") or
                         (img.get("srcset").split(",")[0].strip().split(" ")[0] if img.get("srcset") else None) or
@@ -78,8 +71,6 @@ if st.button("Extract Images from All URLs"):
                         width, height = image.size
 
                         if width >= min_width and height >= min_height:
-                            st.image(image, caption=f"{width}x{height}", use_column_width=True)
-
                             img_buffer = BytesIO()
                             ext = image.format.lower() if image.format else "jpg"
                             image.save(img_buffer, format=image.format or "JPEG")
@@ -99,28 +90,30 @@ if st.button("Extract Images from All URLs"):
             except Exception as e:
                 st.error(f"Error processing {url}: {e}")
 
-# Display images and download buttons from session state
+# Show all download buttons first (at the top)
 if st.session_state.all_results:
+    st.markdown("## Download ZIP Files")
+    for product_name, images in st.session_state.all_results:
+        if images:
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+                for name, img in images:
+                    img.seek(0)
+                    zip_file.writestr(name, img.read())
+            zip_buffer.seek(0)
+
+            st.download_button(
+                label=f"📦 Download {product_name} Images ZIP",
+                data=zip_buffer,
+                file_name=f"{product_name}_images.zip",
+                mime="application/zip"
+            )
+
     st.markdown("---")
+    # Then show images below the buttons
     for product_name, images in st.session_state.all_results:
         st.write(f"### Images for **{product_name}**")
-
         for name, img_buf in images:
             img_buf.seek(0)
             st.image(img_buf.read(), caption=name, use_column_width=True)
             img_buf.seek(0)
-
-        # Prepare ZIP file for download
-        zip_buffer = BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w") as zip_file:
-            for name, img in images:
-                img.seek(0)
-                zip_file.writestr(name, img.read())
-        zip_buffer.seek(0)
-
-        st.download_button(
-            label=f"📦 Download {product_name} Images ZIP",
-            data=zip_buffer,
-            file_name=f"{product_name}_images.zip",
-            mime="application/zip"
-        )
